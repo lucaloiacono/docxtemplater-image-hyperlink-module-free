@@ -80,14 +80,14 @@ module.exports = class ImgManager {
 		types.appendChild(newTag);
 	}
 	// Add an image and returns it's Rid
-	addImageRels(imageName, imageData, i) {
+	addImageRels(imageName, imageData, imageProps, i) {
 		if (i == null) {
 			i = 0;
 		}
 		const realImageName = i === 0 ? imageName : imageName + `(${i})`;
 		const imagePath = `${this.prefix}/media/${realImageName}`;
 		if (this.zip.files[imagePath] != null) {
-			return this.addImageRels(imageName, imageData, i + 1);
+			return this.addImageRels(imageName, imageData, imageProps, i + 1);
 		}
 		const image = {
 			name: imagePath,
@@ -107,6 +107,21 @@ module.exports = class ImgManager {
 		newTag.setAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image");
 		newTag.setAttribute("Target", `${this.mediaPrefix}/${realImageName}`);
 		relationships.appendChild(newTag);
+		if (imageProps) {
+			const imgLink = imageProps.link;
+			this.addHyperLinkRels(imgLink, maxRid + 1);
+		}
 		return maxRid;
+	}
+
+	addHyperLinkRels(hyperLink, rId) {
+		const relationships = this.relsDoc.getElementsByTagName("Relationships")[0];
+		const newTag = this.relsDoc.createElement("Relationship");
+		newTag.namespaceURI = "http://schemas.openxmlformats.org/package/2006/relationships";
+		newTag.setAttribute("Id", `rId${rId}`);
+		newTag.setAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink");
+		newTag.setAttribute("Target", hyperLink);
+		newTag.setAttribute("TargetMode", "External");
+		return relationships.appendChild(newTag);
 	}
 };

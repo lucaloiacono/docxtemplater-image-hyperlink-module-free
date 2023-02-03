@@ -128,17 +128,18 @@ var ImageModule = function () {
 			var tagValue = options.scopeManager.getValue(part.value, {
 				part: part
 			});
+			var imgProps = this.options.getProps(tagValue, part.value);
+			var insertHyperLink = imgProps !== null && imgProps.link;
 			if (!tagValue) {
 				return { value: this.fileTypeConfig.tagTextXml };
 			} else if ((typeof tagValue === "undefined" ? "undefined" : _typeof(tagValue)) === "object") {
-				return this.getRenderedPart(part, tagValue.rId, tagValue.sizePixel);
+				return this.getRenderedPart(part, tagValue.rId, tagValue.sizePixel, insertHyperLink);
 			}
-			
 			var imgManager = new ImgManager(this.zip, options.filePath, this.xmlDocuments, this.fileType);
 			var imgBuffer = this.options.getImage(tagValue, part.value);
-			var rId = imgManager.addImageRels(this.getNextImageName(), imgBuffer);
+			var rId = imgManager.addImageRels(this.getNextImageName(), imgBuffer, imgProps);
 			var sizePixel = this.options.getSize(imgBuffer, tagValue, part.value);
-			return this.getRenderedPart(part, rId, sizePixel);
+			return this.getRenderedPart(part, rId, sizePixel, insertHyperLink);
 		}
 	}, {
 		key: "resolve",
@@ -173,7 +174,7 @@ var ImageModule = function () {
 		}
 	}, {
 		key: "getRenderedPart",
-		value: function getRenderedPart(part, rId, sizePixel) {
+		value: function getRenderedPart(part, rId, sizePixel, insertHyperLink) {
 			if (isNaN(rId)) {
 				throw new Error("rId is NaN, aborting");
 			}
@@ -183,7 +184,7 @@ var ImageModule = function () {
 			if (this.fileType === "pptx") {
 				newText = this.getRenderedPartPptx(part, rId, size, centered);
 			} else {
-				newText = this.getRenderedPartDocx(rId, size, centered);
+				newText = this.getRenderedPartDocx(rId, size, centered, insertHyperLink);
 			}
 			return { value: newText };
 		}
@@ -203,8 +204,8 @@ var ImageModule = function () {
 		}
 	}, {
 		key: "getRenderedPartDocx",
-		value: function getRenderedPartDocx(rId, size, centered) {
-			return centered ? templates.getImageXmlCentered(rId, size) : templates.getImageXml(rId, size);
+		value: function getRenderedPartDocx(rId, size, centered, insertHyperLink) {
+			return centered ? templates.getImageXmlCentered(rId, size, insertHyperLink) : templates.getImageXml(rId, size, insertHyperLink);
 		}
 	}, {
 		key: "getNextImageName",

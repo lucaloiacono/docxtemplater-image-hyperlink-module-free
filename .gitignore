@@ -4,3 +4,4 @@ test/
 node_modules
 coverage/
 .idea/
+.DS_Store

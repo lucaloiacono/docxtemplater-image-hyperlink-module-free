@@ -97,17 +97,19 @@ class ImageModule {
 		const tagValue = options.scopeManager.getValue(part.value, {
 			part: part,
 		});
+		const imgProps = this.options.getProps(tagValue, part.value);
+		const insertHyperLink = imgProps !== null && imgProps.link;
 		if (!tagValue) {
 			return {value: this.fileTypeConfig.tagTextXml};
 		}
 		else if (typeof tagValue === "object") {
-			return this.getRenderedPart(part, tagValue.rId, tagValue.sizePixel);
+			return this.getRenderedPart(part, tagValue.rId, tagValue.sizePixel, insertHyperLink);
 		}
 		const imgManager = new ImgManager(this.zip, options.filePath, this.xmlDocuments, this.fileType);
 		const imgBuffer = this.options.getImage(tagValue, part.value);
-		const rId = imgManager.addImageRels(this.getNextImageName(), imgBuffer);
+		const rId = imgManager.addImageRels(this.getNextImageName(), imgBuffer, imgProps);
 		const sizePixel = this.options.getSize(imgBuffer, tagValue, part.value);
-		return this.getRenderedPart(part, rId, sizePixel);
+		return this.getRenderedPart(part, rId, sizePixel, insertHyperLink);
 	}
 	resolve(part, options) {
 		const imgManager = new ImgManager(this.zip, options.filePath, this.xmlDocuments, this.fileType);
@@ -136,7 +138,7 @@ class ImageModule {
 			});
 		});
 	}
-	getRenderedPart(part, rId, sizePixel) {
+	getRenderedPart(part, rId, sizePixel, insertHyperLink) {
 		if (isNaN(rId)) {
 			throw new Error("rId is NaN, aborting");
 		}
@@ -147,7 +149,7 @@ class ImageModule {
 			newText = this.getRenderedPartPptx(part, rId, size, centered);
 		}
 		else {
-			newText = this.getRenderedPartDocx(rId, size, centered);
+			newText = this.getRenderedPartDocx(rId, size, centered, insertHyperLink);
 		}
 		return {value: newText};
 	}
@@ -163,8 +165,8 @@ class ImageModule {
 		}
 		return templates.getPptxImageXml(rId, [imgW, imgH], offset);
 	}
-	getRenderedPartDocx(rId, size, centered) {
-		return centered ? templates.getImageXmlCentered(rId, size) : templates.getImageXml(rId, size);
+	getRenderedPartDocx(rId, size, centered, insertHyperLink) {
+		return centered ? templates.getImageXmlCentered(rId, size, insertHyperLink) : templates.getImageXml(rId, size, insertHyperLink);
 	}
 	getNextImageName() {
 		const name = `image_generated_${this.imageNumber}.png`;

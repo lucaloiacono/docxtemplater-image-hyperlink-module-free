@@ -1,6 +1,6 @@
-Open Source docxtemplater image module
+Open Source docxtemplater image module with Hyperlink support
 ==========================================
-This repository holds an maintained version of docxtemplater image module.
+This repository holds a maintained version of docxtemplater image module.
 
 This package is open source. There is also a [paid version](https://docxtemplater.com/modules/image/) maintained by docxtemplater author.
 
@@ -43,13 +43,28 @@ opts.getImage = function(tagValue, tagName) {
     return fs.readFileSync(tagValue);
 }
 
-//Pass the function that return image size
+//Pass the function that returns image size
 opts.getSize = function(img, tagValue, tagName) {
     //img is the image returned by opts.getImage()
     //tagValue is 'examples/image.png'
     //tagName is 'image'
     //tip: you can use node module 'image-size' here
     return [150, 150];
+}
+
+//Pass the function that returns image properties
+opts.getProps: function (tagValue, tagName) {
+    // Filter by tagName, replace with your tag
+    if (tagName === 'image') {
+        return {
+            link: 'https://domain.example',
+        };
+    }
+    /*
+     * If you don't want to change the props
+     * for a given tagName, just return null
+     */
+    return null;
 }
 
 var imageModule = new ImageModule(opts);

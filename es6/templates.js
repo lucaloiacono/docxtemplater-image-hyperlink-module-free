@@ -1,10 +1,12 @@
 module.exports = {
-	getImageXml(rId, size) {
+	getImageXml(rId, size, insertHyperLink) {
 		return `<w:drawing>
 		<wp:inline distT="0" distB="0" distL="0" distR="0">
 			<wp:extent cx="${size[0]}" cy="${size[1]}"/>
 			<wp:effectExtent l="0" t="0" r="0" b="0"/>
-			<wp:docPr id="2" name="Image 2" descr="image"/>
+			<wp:docPr id="2" name="Image 2" descr="image">
+				${insertHyperLink ? "<a:hlinkClick xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" r:id=\"rId" + (rId + 1) + "\"/>" : ""}
+			</wp:docPr>
 			<wp:cNvGraphicFramePr>
 				<a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
 			</wp:cNvGraphicFramePr>
@@ -50,7 +52,7 @@ module.exports = {
 	</w:drawing>
 		`.replace(/\t|\n/g, "");
 	},
-	getImageXmlCentered(rId, size) {
+	getImageXmlCentered(rId, size, insertHyperLink) {
 		return `<w:p>
 			<w:pPr>
 				<w:jc w:val="center"/>
@@ -60,7 +62,9 @@ module.exports = {
 				<w:drawing>
 					<wp:inline distT="0" distB="0" distL="0" distR="0">
 					<wp:extent cx="${size[0]}" cy="${size[1]}"/>
-					<wp:docPr id="0" name="Picture" descr=""/>
+					<wp:docPr id="0" name="Picture" descr="">
+						${insertHyperLink ? "<a:hlinkClick xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" r:id=\"rId" + (rId + 1) + "\"/>" : ""}
+					</wp:docPr>
 					<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
 						<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
 						<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
