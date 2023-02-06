@@ -35,5 +35,9 @@
     "pizzip": "^3.1.4",
     "rimraf": "^4.1.2",
     "uglifyjs": "^2.4.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucaloiacono/docxtemplater-image-hyperlink-module-free.git"
   }
 }
