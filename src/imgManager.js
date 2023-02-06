@@ -62,7 +62,7 @@ module.exports = class ImgManager {
 			return max;
 		}, 0);
 	}
-// Add an extension type in the [Content_Types.xml], is used if for example you want word to be able to read png files (for every extension you add you need a contentType)
+	// Add an extension type in the [Content_Types.xml], is used if for example you want word to be able to read png files (for every extension you add you need a contentType)
 	addExtensionRels(contentType, extension) {
 		const contentTypeDoc = this.xmlDocuments["[Content_Types].xml"];
 		const defaultTags = contentTypeDoc.getElementsByTagName("Default");

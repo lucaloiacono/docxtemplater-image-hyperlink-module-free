@@ -1,12 +1,19 @@
+function getImageTag(rId, insertHyperLink) {
+	if (insertHyperLink) {
+		return `<wp:docPr id="2" name="Image 2" descr="image">
+	<a:hlinkClick xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" r:id="rId${rId + 1}"/>
+</wp:docPr>`;
+	}
+	return "<wp:docPr descr=\"image\" id=\"2\" name=\"Image 2\"/>";
+}
+
 module.exports = {
 	getImageXml(rId, size, insertHyperLink) {
 		return `<w:drawing>
 		<wp:inline distT="0" distB="0" distL="0" distR="0">
 			<wp:extent cx="${size[0]}" cy="${size[1]}"/>
 			<wp:effectExtent l="0" t="0" r="0" b="0"/>
-			<wp:docPr id="2" name="Image 2" descr="image">
-				${insertHyperLink ? "<a:hlinkClick xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" r:id=\"rId" + (rId + 1) + "\"/>" : ""}
-			</wp:docPr>
+			${getImageTag(rId, insertHyperLink)}
 			<wp:cNvGraphicFramePr>
 				<a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
 			</wp:cNvGraphicFramePr>
@@ -173,4 +180,3 @@ module.exports = {
 		`.replace(/\t|\n/g, "");
 	},
 };
-

@@ -6,16 +6,15 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var templates = require("./templates");
 var DocUtils = require("docxtemplater").DocUtils;
 var DOMParser = require("xmldom").DOMParser;
+var ImgManager = require("./imgManager");
+var moduleName = "open-xml-templating/docxtemplater-image-module";
+var templates = require("./templates");
 
 function isNaN(number) {
 	return !(number === number);
 }
-
-var ImgManager = require("./imgManager");
-var moduleName = "open-xml-templating/docxtemplater-image-module";
 
 function getInnerDocx(_ref) {
 	var part = _ref.part;
@@ -119,6 +118,8 @@ var ImageModule = function () {
 			}
 			return DocUtils.traits.expandToOne(parsed, { moduleName: moduleName, getInner: getInner, expandTo: expandTo });
 		}
+		// eslint-disable-next-line complexity
+
 	}, {
 		key: "render",
 		value: function render(part, options) {
@@ -132,7 +133,7 @@ var ImageModule = function () {
 			var insertHyperLink = imgProps !== null && imgProps.link;
 			if (!tagValue) {
 				return { value: this.fileTypeConfig.tagTextXml };
-			} else if ((typeof tagValue === "undefined" ? "undefined" : _typeof(tagValue)) === "object") {
+			} else if ((typeof tagValue === "undefined" ? "undefined" : _typeof(tagValue)) === "object" && !(tagValue instanceof ArrayBuffer)) {
 				return this.getRenderedPart(part, tagValue.rId, tagValue.sizePixel, insertHyperLink);
 			}
 			var imgManager = new ImgManager(this.zip, options.filePath, this.xmlDocuments, this.fileType);

@@ -1,21 +1,31 @@
-Open Source docxtemplater image module with Hyperlink support
-==========================================
+# Open Source docxtemplater image module with Hyperlink support
+
 This repository holds a maintained version of docxtemplater image module.
 
 This package is open source. There is also a [paid version](https://docxtemplater.com/modules/image/) maintained by docxtemplater author.
 
 Note this version is compatible with docxtemplater 3.x.
 
-Installation
--------------
+## Installation
+
 You first need to install docxtemplater by following its [installation guide](https://docxtemplater.readthedocs.io/en/latest/installation.html).
+
+### Node
 
 For Node.js install this package:
 ```bash
-npm install docxtemplater-image-module-free
+npm i docxtemplater-image-hyperlink-module-free
+```
+Builds are located in `build/node` directory.
+
+To build your own just run
+```bash
+npm run compile
 ```
 
-For the browser find builds in `build/` directory.
+### Browser
+
+Builds are located in `build/browser` directory.
 
 Alternatively, you can create your own build from the sources:
 ```bash
@@ -24,12 +34,12 @@ npm run browserify
 npm run uglify
 ```
 
-Usage
------
+## Usage
+
 Assuming your **docx** or **pptx** template contains only the text `{%image}`:
 ```javascript
 //Node.js example
-var ImageModule = require('open-docxtemplater-image-module');
+var ImageModule = require('docxtemplater-image-hyperlink-module-free');
 
 //Below the options that will be passed to ImageModule instance
 var opts = {}
@@ -53,8 +63,9 @@ opts.getSize = function(img, tagValue, tagName) {
 }
 
 //Pass the function that returns image properties
-opts.getProps: function (tagValue, tagName) {
+opts.getProps = function(tagValue, tagName) {
     // Filter by tagName, replace with your tag
+    // For instance, the tag is {%image}
     if (tagName === 'image') {
         return {
             link: 'https://domain.example',
@@ -91,11 +102,11 @@ In the browser, this shows how to get the image asynchronously :
 
 ```html
 <html>
-<script src="node_modules/docxtemplater/build/docxtemplater.js"></script>
+<script src="node_modules/docxtemplater/build/browser/docxtemplater.js"></script>
 <script src="node_modules/jszip/dist/jszip.js"></script>
 <script src="node_modules/jszip/vendor/FileSaver.js"></script>
 <script src="node_modules/jszip-utils/dist/jszip-utils.js"></script>
-<script src="build/imagemodule.js"></script>
+<script src="build/browser/imagemodule.js"></script>
 <script>
   JSZipUtils.getBinaryContent('examples/image-example.docx', function (error, content) {
     if (error) {
@@ -134,6 +145,20 @@ In the browser, this shows how to get the image asynchronously :
         }
       });
     }
+    opts.getProps = function(tagValue, tagName) {
+      // Filter by tagName, replace with your tag
+      // For instance, the tag is {%image}
+      if (tagName === 'image') {
+          return {
+              link: 'https://domain.example',
+          };
+      }
+      /*
+      * If you don't want to change the props
+      * for a given tagName, just return null
+      */
+      return null;
+    }
 
     var imageModule = new ImageModule(opts);
 
@@ -160,8 +185,8 @@ In the browser, this shows how to get the image asynchronously :
 </html>
 ```
 
-Centering images
-----------------
+## Centering images
+
 You can center all images by setting the global switch to true `opts.centered = true`.
 
 If you would like to choose which images should be centered one by one:
@@ -185,7 +210,7 @@ const DocxTemplater = require("docxtemplater");
 const https = require("https");
 const Stream = require("stream").Transform;
 
-const ImageModule = require("./es6");
+const ImageModule = require("./src");
 const JSZip = require("jszip");
 
 const content = fs.readFileSync("demo_template.docx");
@@ -222,6 +247,21 @@ opts.getSize = function (img, tagValue, tagName) {
     // calculate height taking into account aspect ratio
     Math.round(sizeObj.height * ratio),
   ];
+};
+
+opts.getProps = function(tagValue, tagName) {
+    // Filter by tagName, replace with your tag
+    // For instance, the tag is {%image}
+    if (tagName === 'image') {
+        return {
+            link: 'https://domain.example',
+        };
+    }
+    /*
+     * If you don't want to change the props
+     * for a given tagName, just return null
+     */
+    return null;
 };
 
 const imageModule = new ImageModule(opts);
@@ -333,6 +373,9 @@ const imageOpts = {
   getSize() {
     return [100, 100];
   },
+  getProps() {
+    return null;
+  }
 };
 doc.attachModule(new ImageModule(imageOpts));
 ```

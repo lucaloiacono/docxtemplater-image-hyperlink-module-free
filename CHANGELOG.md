@@ -1,3 +1,10 @@
+-	### 1.0.1
+
+  - Updated dependencies
+  - Fixed tests
+  - Fixed documentation
+  - Improved scaffolding
+
 -	### 1.0.0
 
   - Added Hyperlink support
