@@ -31,7 +31,7 @@ jobs:
       - name: Run tests on compiled code
         run: npm run test:es6
 
-  publish-gpr:
+  publish-npm:
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -46,6 +46,7 @@ jobs:
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org
+          scope: getify
           
       - name: Install dependencies
         run: npm ci
