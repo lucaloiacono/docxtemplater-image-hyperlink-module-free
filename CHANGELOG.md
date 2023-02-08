@@ -1,3 +1,8 @@
+-	### 1.0.2
+
+  - Added browser builds
+  - Updated documentation
+
 -	### 1.0.1
 
   - Updated dependencies
