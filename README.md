@@ -38,60 +38,62 @@ npm run uglify
 
 Assuming your **docx** or **pptx** template contains only the text `{%image}`:
 ```javascript
-//Node.js example
-var ImageModule = require('docxtemplater-image-hyperlink-module-free');
+// Node.js example
+const PizZip = require("pizzip");
+const Docxtemplater = require("docxtemplater");
+const ImageModule = require('docxtemplater-image-hyperlink-module-free');
 
-//Below the options that will be passed to ImageModule instance
-var opts = {}
-opts.centered = false; //Set to true to always center images
-opts.fileType = "docx"; //Or pptx
+const fs = require("fs");
+const path = require("path");
 
-//Pass your image loader
-opts.getImage = function(tagValue, tagName) {
-    //tagValue is 'examples/image.png'
-    //tagName is 'image'
-    return fs.readFileSync(tagValue);
-}
-
-//Pass the function that returns image size
-opts.getSize = function(img, tagValue, tagName) {
-    //img is the image returned by opts.getImage()
-    //tagValue is 'examples/image.png'
-    //tagName is 'image'
-    //tip: you can use node module 'image-size' here
-    return [150, 150];
-}
-
-//Pass the function that returns image properties
-opts.getProps = function(tagValue, tagName) {
-    // Filter by tagName, replace with your tag
-    // For instance, the tag is {%image}
-    if (tagName === 'image') {
-        return {
-            link: 'https://domain.example',
-        };
+// Below the options that will be passed to ImageModule instance
+const imageOpts = {
+    centered: false, // Set to true to always center images
+    fileType: "docx", // Or pptx
+    // Pass your image loader
+    getImage: function (tagValue, tagName) {
+        return fs.readFileSync(tagValue);
+    },
+    // Pass the function that returns image size
+    getSize: function (img, tagValue, tagName) {
+        // It also is possible to return a size in centimeters, like this : return [ "2cm", "3cm" ];
+        return [150, 150];
+    },
+    // Pass the function that returns image properties
+    getProps: function(tagValue, tagName) {
+        // Filter by tagName, replace with yours
+        // For instance, tagName is 'image'
+        if (tagName === 'image') {
+            return {
+                link: 'https://domain.example',
+            };
+        }
+        /*
+        * If you don't want to change the props
+        * for a given tagName, just return null
+        */
+        return null;
     }
-    /*
-     * If you don't want to change the props
-     * for a given tagName, just return null
-     */
-    return null;
-}
+};
 
-var imageModule = new ImageModule(opts);
+// Load the docx file as binary content
+const content = fs.readFileSync(
+    path.resolve(__dirname, "input.docx"),
+    "binary"
+);
 
-var zip = new JSZip(content);
-var doc = new Docxtemplater()
-    .attachModule(imageModule)
-    .loadZip(zip)
-    .setData({image: 'examples/image.png'})
-    .render();
+const zip = new PizZip(content);
+const doc = new Docxtemplater(zip, {
+    modules: [new ImageModule(imageOpts)],
+});
+doc.render({ image: "examples/image.png" });
 
-var buffer = doc
-        .getZip()
-        .generate({type:"nodebuffer"});
+const buffer = doc.getZip().generate({
+    type: "nodebuffer",
+    compression: "DEFLATE",
+});
 
-fs.writeFile("test.docx",buffer);
+fs.writeFile("test.docx", buffer);
 ```
 
 Some notes regarding templates:
@@ -102,242 +104,278 @@ In the browser, this shows how to get the image asynchronously :
 
 ```html
 <html>
-<script src="node_modules/docxtemplater/build/browser/docxtemplater.js"></script>
-<script src="node_modules/jszip/dist/jszip.js"></script>
-<script src="node_modules/jszip/vendor/FileSaver.js"></script>
-<script src="node_modules/jszip-utils/dist/jszip-utils.js"></script>
-<script src="build/browser/imagemodule.js"></script>
-<script>
-  JSZipUtils.getBinaryContent('examples/image-example.docx', function (error, content) {
-    if (error) {
-      console.error(error);
-      return;
-    }
-    var opts = {}
-    opts.centered = false;
-    opts.getImage = function (tagValue, tagName) {
-      return new Promise(function (resolve, reject) {
-        JSZipUtils.getBinaryContent(tagValue, function (error, content) {
-          if (error) {
-            return reject(error);
-          }
-          return resolve(content);
-        });
-      });
-    }
-    opts.getSize = function (img, tagValue, tagName) {
-      // FOR FIXED SIZE IMAGE :
-      return [150, 150];
+    <script src="node_modules/docxtemplater/build/docxtemplater.js"></script>
+    <script src="node_modules/pizzip/dist/pizzip.js"></script>
+    <script src="node_modules/pizzip/vendor/FileSaver.js"></script>
+    <script src="node_modules/pizzip/dist/pizzip-utils.js"></script>
+    <script src="build/browser/imagemodule.js"></script>
+    <script>
+        docxType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        PizZipUtils.getBinaryContent(
+            "examples/image-example.docx",
+            function (error, content) {
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                const imageOpts = {
+                    centered: false,
+                    getImage: function (tagValue, tagName) {
+                        return new Promise(function (
+                            resolve,
+                            reject
+                        ) {
+                            PizZipUtils.getBinaryContent(
+                                tagValue,
+                                function (error, content) {
+                                    if (error) {
+                                        return reject(error);
+                                    }
+                                    return resolve(content);
+                                }
+                            );
+                        });
+                    },
+                    getSize: function (img, tagValue, tagName) {
+                        // FOR FIXED SIZE IMAGE :
+                        return [150, 150];
 
-      // FOR IMAGE COMING FROM A URL (IF TAGVALUE IS AN ADRESS) :
-      // To use this feature, you have to be using docxtemplater async
-      // (if you are calling setData(), you are not using async).
-      return new Promise(function (resolve, reject) {
-        var image = new Image();
-        image.src = url;
-        image.onload = function () {
-          resolve([image.width, image.height]);
-        };
-        image.onerror = function (e) {
-          console.log('img, tagValue, tagName : ', img, tagValue, tagName);
-          alert("An error occured while loading " + tagValue);
-          reject(e);
-        }
-      });
-    }
-    opts.getProps = function(tagValue, tagName) {
-      // Filter by tagName, replace with your tag
-      // For instance, the tag is {%image}
-      if (tagName === 'image') {
-          return {
-              link: 'https://domain.example',
-          };
-      }
-      /*
-      * If you don't want to change the props
-      * for a given tagName, just return null
-      */
-      return null;
-    }
+                        // FOR IMAGE COMING FROM A URL (IF TAGVALUE IS AN ADDRESS) :
+                        // To use this feature, you have to be using docxtemplater async
+                        // (if you are calling render(), you are not using async).
+                        return new Promise(function (
+                            resolve,
+                            reject
+                        ) {
+                            const image = new Image();
+                            image.src = url;
+                            image.onload = function () {
+                                resolve([
+                                    image.width,
+                                    image.height,
+                                ]);
+                            };
+                            image.onerror = function (e) {
+                                console.log(
+                                    "img, tagValue, tagName : ",
+                                    img,
+                                    tagValue,
+                                    tagName
+                                );
+                                alert(
+                                    "An error occured while loading " +
+                                        tagValue
+                                );
+                                reject(e);
+                            };
+                        });
+                    },
+                    getProps: function(tagValue, tagName) {
+                        // Filter by tagName, replace with yours
+                        // For instance, tagName is 'image'
+                        if (tagName === 'image') {
+                            return {
+                                link: 'https://domain.example',
+                            };
+                        }
+                        /*
+                        * If you don't want to change the props
+                        * for a given tagName, just return null
+                        */
+                        return null;
+                    }
+                };
 
-    var imageModule = new ImageModule(opts);
+                const zip = new PizZip(content);
+                const doc = new docxtemplater(zip, {
+                    modules: [new ImageModule(imageOpts)],
+                });
 
-    var zip = new JSZip(content);
-    var doc = new docxtemplater()
-      .loadZip(zip)
-      .attachModule(imageModule)
-      .compile();
-
-    doc.resolveData({
-      image: 'examples/image.png'
-    }).then(function () {
-      console.log('ready');
-      doc.render();
-      var out = doc.getZip().generate({
-        type: "blob",
-        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
-      saveAs(out, "generated.docx");
-    })
-  });
-</script>
+                doc.renderAsync({
+                    image: "examples/image.png",
+                }).then(function () {
+                    const out = doc.getZip().generate({
+                        type: "blob",
+                        mimeType: docxType,
+                    });
+                    saveAs(out, "generated.docx");
+                });
+            }
+        );
+    </script>
 
 </html>
 ```
 
 ## Centering images
 
-You can center all images by setting the global switch to true `opts.centered = true`.
+You can center all images by setting the global switch to true `imageOpts.centered = true`.
 
 If you would like to choose which images should be centered one by one:
-* Set the global switch to false `opts.centered = false`.
+* Set the global switch to false `imageOpts.centered = false`.
 * Use `{%image}` for images that shouldn't be centered.
 * Use `{%%image}` for images that you would like to see centered.
 
 In **pptx** generated documents, images are centered vertically and horizontally relative to the parent cell.
 
-## Async support
+## Fetch image from url
 
-It is possible to get images asynchronously by returning a Promise in the getImage function and use the docxtemplater async api : http://docxtemplater.readthedocs.io/en/latest/async.html
-
-You can also return a promise in the getSize function if you want to resolve the size asynchronously (like in the browser example above).
+It is possible to get images asynchronously by returning a Promise in the `getImage` function and use the docxtemplater async api : http://docxtemplater.readthedocs.io/en/latest/async.html
 
 Here is an example in node that allows you to retrieve values from an URL and use a fixed width, and keep the aspect ratio.
 
 ```js
 const fs = require("fs");
-const DocxTemplater = require("docxtemplater");
+const Docxtemplater = require("docxtemplater");
 const https = require("https");
+const http = require("http");
 const Stream = require("stream").Transform;
-
-const ImageModule = require("./src");
-const JSZip = require("jszip");
+const ImageModule = require("docxtemplater-image-module");
+const PizZip = require("pizzip");
 
 const content = fs.readFileSync("demo_template.docx");
 
-const data = {
-  image: "https://docxtemplater.com/xt-pro.png"
-};
+const data = { image: "https://docxtemplater.com/xt-pro.png" };
 
-const opts = {};
-opts.getImage = function (tagValue, tagName) {
-  console.log(tagValue, tagName);
-  // tagValue is "https://docxtemplater.com/xt-pro-white.png" and tagName is "image"
-  return new Promise(function (resolve, reject) {
-    getHttpData(tagValue, function (err, data) {
-      if (err) {
-        return reject(err);
-      }
-      resolve(data);
-    });
-  });
-};
-
-opts.getSize = function (img, tagValue, tagName) {
-  console.log(tagValue, tagName);
-  // img is the value that was returned by getImage
-  // This is to force the width to 600px, but keep the same aspect ration
-  const sizeOf = require("image-size");
-  const sizeObj = sizeOf(img);
-  console.log(sizeObj);
-  const forceWidth = 600;
-  const ratio = forceWidth / sizeObj.width;
-  return [
-    forceWidth,
-    // calculate height taking into account aspect ratio
-    Math.round(sizeObj.height * ratio),
-  ];
-};
-
-opts.getProps = function(tagValue, tagName) {
-    // Filter by tagName, replace with your tag
-    // For instance, the tag is {%image}
-    if (tagName === 'image') {
-        return {
-            link: 'https://domain.example',
-        };
+const imageOpts = {
+    getImage: function (tagValue, tagName) {
+        console.log(tagValue, tagName);
+        const base64Value = base64Parser(tagValue);
+        if (base64Value) {
+            return base64Value;
+        }
+        // tagValue is "https://docxtemplater.com/xt-pro-white.png"
+        // tagName is "image"
+        return new Promise(function (resolve, reject) {
+            getHttpData(tagValue, function (err, data) {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(data);
+            });
+        });
+    },
+    getSize: function (img, tagValue, tagName) {
+        console.log(tagValue, tagName);
+        // img is the value that was returned by getImage
+        // This is to force the width to 600px, but keep the same aspect ratio
+        const sizeOf = require("image-size");
+        const sizeObj = sizeOf(img);
+        console.log(sizeObj);
+        const forceWidth = 600;
+        const ratio = forceWidth / sizeObj.width;
+        return [
+            forceWidth,
+            // calculate height taking into account aspect ratio
+            Math.round(sizeObj.height * ratio),
+        ];
+    },
+    getProps: function(tagValue, tagName) {
+        // Filter by tagName, replace with yours
+        // For instance, tagName is 'image'
+        if (tagName === 'image') {
+            return {
+                link: 'https://domain.example',
+            };
+        }
+        /*
+        * If you don't want to change the props
+        * for a given tagName, just return null
+        */
+        return null;
     }
-    /*
-     * If you don't want to change the props
-     * for a given tagName, just return null
-     */
-    return null;
 };
 
-const imageModule = new ImageModule(opts);
+const zip = new PizZip(content);
+const doc = new Docxtemplater(zip, {
+    modules: [new ImageModule(imageOpts)],
+});
 
-const zip = new JSZip(content);
-const doc = new DocxTemplater()
-  .loadZip(zip)
-  .attachModule(imageModule)
-  .compile();
+doc.renderAsync(data)
+    .then(function () {
+        const buffer = doc.getZip().generate({
+            type: "nodebuffer",
+            compression: "DEFLATE",
+        });
 
-doc
-  .resolveData(data)
-  .then(function () {
-    console.log("data resolved");
-    doc.render();
-    const buffer = doc
-      .getZip()
-      .generate({
-        type: "nodebuffer",
-        compression: "DEFLATE"
-      });
-
-    fs.writeFileSync("test.docx", buffer);
-    console.log("rendered");
-  })
-  .catch(function (error) {
-    console.log("An error occured", error);
-  });
-
-function getHttpData(url, callback) {
-  https
-    .request(url, function (response) {
-      if (response.statusCode !== 200) {
-        return callback(
-          new Error(
-            `Request to ${url} failed, status code: ${response.statusCode}`
-          )
-        );
-      }
-
-      const data = new Stream();
-      response.on("data", function (chunk) {
-        data.push(chunk);
-      });
-      response.on("end", function () {
-        callback(null, data.read());
-      });
-      response.on("error", function (e) {
-        callback(e);
-      });
+        fs.writeFileSync("test.docx", buffer);
+        console.log("rendered");
     })
-    .end();
+    .catch(function (error) {
+        console.log("An error occured", error);
+    });
+
+// Returns a Promise<Buffer> of the image
+function getHttpData(url, callback) {
+    (url.substr(0, 5) === "https" ? https : http)
+        .request(url, function (response) {
+            if (response.statusCode !== 200) {
+                return callback(
+                    new Error(
+                        `Request to ${url} failed, status code: ${response.statusCode}`
+                    )
+                );
+            }
+
+            const data = new Stream();
+            response.on("data", function (chunk) {
+                data.push(chunk);
+            });
+            response.on("end", function () {
+                callback(null, data.read());
+            });
+            response.on("error", function (e) {
+                callback(e);
+            });
+        })
+        .end();
 }
 ```
 
-## Size and path based on placeholder
+## Dynamic image loader based on placeholder
 
 You can have customizable image loader using the template's placeholder name.
 
-```
-opts.getImage = function (tagValue, tagName) {
-    if(tagName === 'logo')
-        return fs.readFileSync(__dirname + '/logos/' + tagValue);
+```js
+const imageOpts = {
+    getImage: function (tagValue, tagName) {
+        if (tagName === "logo")
+            return fs.readFileSync(
+                __dirname + "/logos/" + tagValue
+            );
 
-    return fs.readFileSync(__dirname + '/images/' + tagValue);
+        return fs.readFileSync(
+            __dirname + "/images/" + tagValue
+        );
+    },
 };
 ```
 
 The same thing can be used to customize image size.
 
-```
-opts.getSize = function (img, tagValue, tagName) {
-    if(tagName === 'logo')
-        return [100, 100];
+```js
+const imageOpts = {
+    getSize: function (img, tagValue, tagName) {
+        if (tagName === "logo") return [100, 100];
 
-    return [300, 300];
+        return [300, 300];
+    },
+};
+```
+
+And image properties.
+
+```js
+const imageOpts = {
+    getProps: function (img, tagValue, tagName) {
+        if (tagName === "logo") return {
+            link: "https://mycompany.com";
+        };
+
+        return {
+            link: "https://defaultlink.com";
+        }
+    },
 };
 ```
 
@@ -374,7 +412,9 @@ const imageOpts = {
     return [100, 100];
   },
   getProps() {
-    return null;
+    return {
+        link: "https://domain.example"
+    };
   }
 };
 doc.attachModule(new ImageModule(imageOpts));
